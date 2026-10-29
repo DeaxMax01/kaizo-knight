@@ -3,11 +3,14 @@ using System.IO;
 using System.Linq;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Compiler;
+
 EnsureDataLoaded();
 var context = new GlobalDecompileContext(Data);
 var imports = new CodeImportGroup(Data);
+
 string Read(string name) => new Underanalyzer.Decompiler.DecompileContext(context, Data.Code.First(c => c.Name.Content == name), Data.ToolInfo.DecompilerSettings).DecompileToString();
 void Replace(string name, string code) => imports.QueueReplace(name, code);
+
 // Start the chapter through its usual initialization, then load only the arena.
 Replace("gml_Object_obj_intro_ch3_Create_0", @"
 global.filechoice = 0;
@@ -19,8 +22,26 @@ if (file_exists(""browser-route.txt"")) {
  file_text_close(routefile);
 }
 scr_load();");
-Replace("gml_Object_obj_intro_ch3_Step_0", "");
+
+// Force HP caps to stick by executing a one-time structural overwrite in the Step event
+Replace("gml_Object_obj_intro_ch3_Step_0", @"
+if (global.currentroom == 30108) {
+    global.maxhp = 680;
+    global.maxhp = 800;
+    global.maxhp = 520;
+    global.maxhp = 700;
+
+    global.hp = global.maxhp;
+    global.hp = global.maxhp;
+    global.hp = global.maxhp;
+    global.hp = global.maxhp;
+
+    instance_destroy(); 
+}
+");
+
 Replace("gml_Object_obj_intro_ch3_Draw_0", "");
+
 string load = Read("gml_GlobalScript_scr_load");
 load=load.Replace("myfileid = ossafe_file_text_open_read(file);", "file = global.browser_weird ? \"knight-weird.sav\" : \"knight-normal.sav\";\nmyfileid = ossafe_file_text_open_read(file);");
 load=load.Replace("var room_id = global.currentroom;", @"
@@ -30,12 +51,10 @@ global.tempflag[90] = 5;
 global.knight_mode = 2;
 global.kaizo_intro = 0;
 global.kaizo_practice = 0;
-global.maxhp[1] = 680; global.hp[1] = 680;
-global.maxhp[2] = 800; global.hp[2] = 800;
-global.maxhp[3] = 520; global.hp[3] = 520;
-global.maxhp[4] = 700; global.hp[4] = 700;
+for (var bh = 1; bh <= 4; bh++) global.hp[bh] = global.maxhp[bh];
 var room_id = global.currentroom;");
 Replace("gml_GlobalScript_scr_load",load);
+
 string create=Read("gml_Object_obj_ch3_PTB02_Create_0");
 create+=@"
 con = 4;
@@ -51,6 +70,7 @@ knight_marker = scr_dark_marker(roaring_knight.x, roaring_knight.y, spr_roaringk
 camera_set_view_pos(view_get_camera(0),2230,0);
 ";
 Replace("gml_Object_obj_ch3_PTB02_Create_0",create);
+
 string step=Read("gml_Object_obj_ch3_PTB02_Step_0");
 step=@"
 if (con >= 8) {
@@ -62,8 +82,10 @@ if (con >= 8) {
 }
 "+step;
 Replace("gml_Object_obj_ch3_PTB02_Step_0",step);
+
 // The browser package places all external music beside the game.
 Replace("gml_GlobalScript_kaizo_settings_init", Read("gml_GlobalScript_kaizo_settings_init").Replace("working_directory + \"../mus/\"", "\"mus/\""));
 Replace("gml_Object_obj_knight_enemy_Create_0", Read("gml_Object_obj_knight_enemy_Create_0")+"\nshow_debug_message(\"KNIGHT_READY:\"+string(k_sideb));");
+
 imports.Import();
 ScriptMessage("Knight-only browser patch applied; original attack logic preserved.");
