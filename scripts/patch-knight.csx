@@ -23,27 +23,13 @@ if (file_exists(""browser-route.txt"")) {
 }
 scr_load();");
 
-// Force HP caps to stick by executing a one-time structural overwrite in the Step event
-Replace("gml_Object_obj_intro_ch3_Step_0", @"
-if (global.currentroom == 30108) {
-    global.maxhp = 680;
-    global.maxhp = 800;
-    global.maxhp = 520;
-    global.maxhp = 700;
-
-    global.hp = global.maxhp;
-    global.hp = global.maxhp;
-    global.hp = global.maxhp;
-    global.hp = global.maxhp;
-
-    instance_destroy(); 
-}
-");
-
+Replace("gml_Object_obj_intro_ch3_Step_0", "");
 Replace("gml_Object_obj_intro_ch3_Draw_0", "");
 
 string load = Read("gml_GlobalScript_scr_load");
 load=load.Replace("myfileid = ossafe_file_text_open_read(file);", "file = global.browser_weird ? \"knight-weird.sav\" : \"knight-normal.sav\";\nmyfileid = ossafe_file_text_open_read(file);");
+
+// SWAP MANIFEST INJECTION: Replaces the initial loop with explicit target stats
 load=load.Replace("var room_id = global.currentroom;", @"
 global.currentroom = 30108;
 global.plot = 320;
@@ -51,7 +37,12 @@ global.tempflag[90] = 5;
 global.knight_mode = 2;
 global.kaizo_intro = 0;
 global.kaizo_practice = 0;
-for (var bh = 1; bh <= 4; bh++) global.hp[bh] = global.maxhp[bh];
+
+global.maxhp[1] = 680; global.hp[1] = 680; // Kris
+global.maxhp[2] = 800; global.hp[2] = 800; // Susie
+global.maxhp[3] = 520; global.hp[3] = 520; // Ralsei
+global.maxhp[4] = 700; global.hp[4] = 700; // Noelle
+
 var room_id = global.currentroom;");
 Replace("gml_GlobalScript_scr_load",load);
 
